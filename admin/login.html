@@ -91,13 +91,13 @@
           success: function (backData) {
             console.log(backData);
             if (backData.code == 200) {
-              //4.如果账号密码没有问题,登录登出,跳转到首页(index.html)
+              //4.如果账号密码没有问题，跳转到首页(index.html)
               //alert(backData.msg);
               $('.modal-body').text(backData.msg);
-              $('#myModal').modal(); //js代码弹出bootstrap的模态框
-              //在这里应该是要 关闭模态框 的情况下才执行下面这个跳转的代码. 
+              $('#myModal').modal(); //js模态框
+              //关闭模态框的情况下才跳转的代码. 
               $('#myModal').on('hidden.bs.modal', function (e) {
-                //把服务器返回回来的Token令牌给保存起来. 
+                //保存Token令牌
                 localStorage.setItem('token',backData.token);
                 //登录成功跳转到首页. 
                 window.location.href = './index.html';
@@ -105,9 +105,9 @@
 
 
             } else {
-              //  如果账号密码有误,提示
+              //账号密码有误,提示
               $('.modal-body').text(backData.msg);
-              $('#myModal').modal(); //js代码弹出bootstrap的模态框
+              $('#myModal').modal(); //js模态框
               //alert(backData.msg);
             }
           }
