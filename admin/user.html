@@ -44,7 +44,7 @@
                     <label for="inputPassword3" class="col-sm-2 control-label">用户图标：</label>
                     <div class="col-sm-10">
                         <img src="images/2.jpg" alt="" class="user_pic">
-                        <input style="display: block" name="userPic" type="file" id="exampleInputFile">
+                        <input style="display: none" name="userPic" type="file" id="exampleInputFile">
                         <!-- 给label标签的for属性赋值,值是input标签的id,那这样的话点击label就相当于点击了input -->
                         <br>
                         <label for="exampleInputFile">
@@ -118,11 +118,11 @@
                     success: function (backData) {
                         //console.log(backData);
                         if (backData.code == 200) {
-                            // alert('更新成功!');
+                            alert('更新成功!');
                             //第一种: 更新页面: 在子窗口中去更新父窗口
-                            // parent.window.location.reload();
+                            //parent.window.location.reload();
 
-                            // 第二种: 修改成功后,发送ajax请求,获取个人信息
+                            //第二种: 修改成功后,发送ajax请求,获取个人信息
                             $.ajax({
                                 type: 'get',
                                 url: window.BigNew.user_info,
