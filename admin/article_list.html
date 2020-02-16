@@ -11,8 +11,14 @@
     <link rel="stylesheet" href="./css/iconfont.css">
     <link rel="stylesheet" href="./css/main.css">
     <script src="./libs/jquery-1.12.4.min.js"></script>
+    <!-- <script src="../js/Gruntfile.js"></script> -->
+    <script src="../js/jquery.twbsPagination.js"></script>
+    <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
+
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
+    <!-- 引入接口 -->
+    <script src="./libs/http.js"></script>
 </head>
 
 <body>
@@ -69,6 +75,8 @@
                 </tbody>
             </table>
             <div class="row text-center">
+                <ul class="pagination" id="pagination"></ul>
+                <p>无数据</p>
             </div>
         </div>
     </div>
@@ -77,7 +85,7 @@
     <script id="category_temp" type="text/html">
         <option value="">所有分类</option>
         {{each data v}}
-            <option value="{{v.id}}">{{v.name}}</option>
+        <option value="{{v.id}}">{{v.name}}</option>
         {{/each}}
     </script>
 
@@ -91,14 +99,14 @@
             <td class="text-center">{{v.date}}</td>
             <td class="text-center">{{v.state}}</td>
             <td class="text-center">
-                <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
-                <a href="javascript:void(0);" data-id="{{v.categoryId}}" class="btn btn-danger btn-xs delete">删除</a>
+                <a href="article_edit.html?id={{v.id}}"  class="btn btn-default btn-xs">编辑</a>
+                <a href="javascript:void(0);" data-id="{{v.id}}" class="btn btn-danger btn-xs delete">删除</a>
             </td>
         </tr>
         {{/each}}
     </script>
 
-    <script src="./libs/http.js"></script>
+    
     <script>
         //入口函数
         $(function () {
@@ -109,35 +117,140 @@
                 success: function (backData) {
                     if (backData.code == 200) {
                         //通过模板引擎渲染到下拉菜单中. 
-                        var resHtml = template('category_temp',backData);
+                        var resHtml = template('category_temp', backData);
                         $('#selCategory').html(resHtml);
+
+
                     }
                 }
             });
+            //======-----------函数封装---
+            var myPage = 1;
+
+            function getData(myPage, callback) {
+                $.ajax({
+                    type: 'get',
+                    url: BigNew.article_query,
+                    data: {
+                        type: $('#selCategory').val(), //文章类别（爱生活/爱旅行...）
+                        state: $('#selStatus').val(), //文章状态（草稿/已发布）
+                        page: myPage,
+                        perpage: 6
+                    },
+                    success: function (backData) {
+                        // console.log(backData);
+                        if (backData.code == 200) {
+                            //调用模板引擎的核心方法
+                            var resHtml = template('articleList_temp', backData);
+                            $('tbody').html(resHtml);
+
+                            if (backData.data.totalPage != 0 && callback != null) {
+                            //有数据
+                                $('#pagination').show();
+                                $('#pagination').next().hide();
+                                callback(backData);
+                            } 
+                            //11111111111111111111111111111111111
+                            // else if(backData.data.totalPage == myPage-1 && backData.data.data.length == 0){
+                            //     myPage -= 1;
+                            //     $('#pagination').twbsPagination('changeTotalPages', backData.data.totalPage,myPage);
+                            // }
+                            //11111111111111111111111111111111111
+                            else if (backData.data.totalPage == 0) {
+                                // 无数据
+                                $('#pagination').hide();
+                                $('#pagination').next().show();
+                            }
+
+
+                        }
+                    }
+                });
+
+            }
 
             //二:一进到页面,就发送ajax请求,获取默认的文章数据列表,显示在页面上
-            $.ajax({
-                type:'get',
-                url:BigNew.article_query,
-                data:{
-                   type: $('#selCategory').val(), //文章类别
-                   state: $('#selStatus').val(),
-                   page:1,
-                   perpage:6
-                },
-                success:function(backData){
+
+            getData(1, function (backData) {
+                $(function () {
+                    $('#pagination').twbsPagination({
+                        totalPages: backData.data.totalPage,
+                        visiblePages: 7,
+                        first: '首页',
+                        prev: '上一页',
+                        next: '下一页',
+                        last: '尾页',
+                        onPageClick: function (event, page) {
+                            // console.info(page);
+                            // 发送请求获取，获取点击页码
+                            getData(page, null);
+                            // 把页码保存起来，删除后加载新页面使用
+                            myPage = page;
+                        }
+                    })
+
+                });
+            })
+            //三.点击筛选按钮，获取符合条件的文章
+            $('#btnSearch').on('click', function (e) {
+                e.preventDefault();
+                getData(1, function (backData) {
+                    //条件改变，数据总数也变了，就要重新生成总页数
+                    //twbsPagination 是页码动态生成的方法
+                    $('#pagination').twbsPagination('changeTotalPages', backData.data.totalPage,
+                        1)
                     console.log(backData);
-                    if(backData.code == 200){
-                        //调用模板引擎的核心方法
-                        var resHtml = template('articleList_temp',backData);
-                        $('tbody').html(resHtml);
-                    }
+                })
+
+
+
+            })
+
+
+            //四.删除文章
+            //给删除按钮添加点击事件
+            $('tbody').on('click', '.delete', function () {
+                if (confirm('确定删除？')) {
+                    var articleId = $(this).attr('data-id')
+                    // console.log(articleId);
+
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.article_delete,
+                        data: {
+                            id: articleId
+                        },
+                        success: function (backData) {
+                            //重新加载
+                            if(backData.code == 204){
+                                //重新加载由于删除部分数据得到的 新的数据
+                                //由于删除了数据,那总的页码就有可能变少. 
+                                //那就应该根据新的总页数 重新生成 分页结构
+                                getData(myPage,function(backData){
+                                    //11111111111111111111111111111
+                                    // $('#pagination').twbsPagination('changeTotalPages', backData.data.totalPage,myPage);
+                                    //11111111111111111111111111111
+
+                                    //这是你们班同学的代码,非常优秀,给个赞. 
+                                    if(backData.data.totalPage == myPage || myPage == 1){
+                                        $('#pagination').twbsPagination('changeTotalPages', backData.data.totalPage,myPage);
+                                    }else {
+                                        $('#pagination').twbsPagination('changeTotalPages', backData.data.totalPage,myPage-1);
+                                    }
+                                });
+                            }
+
+                        }
+                    })
+
+
                 }
-            });
 
-
+            })
         })
     </script>
+
+
 </body>
 
 </html>
