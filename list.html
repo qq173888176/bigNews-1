@@ -227,6 +227,87 @@
     </div>
     <!-- 导包template -->
     <script src="./js/template-web.js"></script>
+    <!-- list页面模板 -->
+    <script id="list_temp" type="text/html">
+        {{each data.data v}}
+        <div class="common_news_list">
+            <a href="./article.html?id={{v.id}}" class="list_pic"><img src="{{v.cover}}" alt=""></a>
+            <h4><a href="./article.html?id={{v.id}}">{{v.title}}</a></h4>
+            <p>{{v.intro}}</p>
+            <div class="new_info">
+                <span>标签：{{v.category}}&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<i class="fa fa-eye"></i>&nbsp;阅读(
+                    {{v.read}}
+                    )&nbsp;&nbsp;&nbsp;<i class="fa fa-commenting"></i>&nbsp;评论( {{v.comments}} )</span>
+                <b>发布于 {{v.date}}</b>
+            </div>
+        </div>
+        {{/each}}
+    </script>
+    <script>
+        $(function () {
+            //判断是怎么进入list页面..
+            var va1 = window.location.search.split('=')[0];
+            // console.log(va1);
+
+            var va2 = window.location.search.split('=')[1];
+            // console.log(va2);
+
+            if (va1 == '') {
+                //如果为空地就是直接从list.html地址进入的
+                window.location.href = './index.html';
+
+            } else if (va1 == '?id') {
+                //如果有？id 那就是点击文章类别进来的
+                // console.log(va1);
+                $.ajax({
+                    url: 'http://localhost:8080/api/v1/index/search',
+                    data: {
+                        type: va2
+                    },
+                    success: function (backData) {
+                        // console.log(backData);
+                        if (backData.data.data.length > 0) {
+                            var resHtml = template('list_temp', backData);
+                            $('div.left_con.setfr').html('<div class="list_title"><h3>' + backData
+                                .data.data[0].category + '</h3></div>' + resHtml);
+                            // $('div.left_com.setfr').html('<div class="list_title"><h3>' + av1.category + '</h3></div>' + resHtml);
+                        } else {
+                            //$('.list_title>h3').text("无数据");
+                            $('div.left_con.setfr').html(
+                                '<div class="list_title"><h3>无数据</h3></div>');
+                        }
+
+
+
+                    }
+
+                })
+
+
+            } else {
+                //如果 是searchTxt那就是点击搜索按钮进入的
+                console.log(va2);
+                va2 = decodeURI(va2); //url 解码
+                console.log(va2);
+                $.ajax({
+                    type:'get',
+                    url:'http://localhost:8080/api/v1/index/search',
+                    data:{
+                        key:va2
+                    },
+                    success:function(backData){
+                        var resHtml = template('list_temp',backData);
+                        $('div.left_con.setfr').html('<div class="list_title"><h3>搜索词:'+va2+'</h3></div>'+resHtml);
+                        
+                    }
+                }); 
+            }
+
+        })
+    </script>
+
+
+
 </body>
 
 </html>
